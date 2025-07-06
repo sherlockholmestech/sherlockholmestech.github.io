@@ -90,7 +90,7 @@ m = bytes_to_long(flag.encode())
 C = pow(m,e)
 ```
 We can therefore conclude that $C_{original} = m^3$, hence $m = \sqrt[3]{C_{original}}$.
-```python=
+```python
 m = C_original ** (1/3)
 print(f"{m = }")
 flag = long_to_bytes(int(m)).decode()
