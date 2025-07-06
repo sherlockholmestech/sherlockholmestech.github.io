@@ -10,7 +10,7 @@ lang: ''
 ---
 # Preamble
 
-GreyCTF 2025 was quite the eye-opener, as the first CTF that I have _properly_ particiapted in. Here are the writeups for the challs that I bothered to write for.
+GreyCTF 2025 was quite the eye-opener, as the first CTF that I have _properly_ particiapted in. Here are the writeups for the challs that I bothered to write for, do enjoy.
 
 # Writeups
 
