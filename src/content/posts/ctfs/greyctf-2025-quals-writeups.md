@@ -28,7 +28,7 @@ GreyCTF 2025 was quite the eye-opener, as the first CTF that I have _properly_ p
 > Tung Tung Tung Tung Tung Tung Tung Tung Tung Sahur
 
 Challenge script tung_tung_tung_sahur.py:
-```python=
+```python
 from Crypto.Util.number import getPrime, bytes_to_long
 
 flag = "grey{flag_here}"
@@ -59,7 +59,7 @@ print(f"{C = }")
 ### Thinking Process
 Absolutely hilarious (not) name aside, this challenge was one of the quickest to be solved in our team (other than Sanity Check, of course). A quick glance at the python code immediately jumped at me that this was some sort of easy crypto challenge.
 
-```python=
+```python
 assert C < N 
 while (C < N):
     C *= 2
@@ -75,14 +75,14 @@ From these lines in the challenge script, we can see that $C$ is multiplied by $
 
 In order to recover the original value of $C$, I began by adding back the value of $N$, and dividng $C$ by $2^{164}$.
 
-```python=
+```python
 C = 49352042282005059128581014505726171900605591297613623345867441621895112187636996726631442703018174634451487011943207283077132380966236199654225908444639768747819586037837300977718224328851698492514071424157020166404634418443047079321427635477610768472595631700807761956649004094995037741924081602353532946351
 C_atlered = C + 140435453730354645791411355194663476189925572822633969369789174462118371271596760636019139860253031574578527741964265651042308868891445943157297334529542262978581980510561588647737777257782808189452048059686839526183098369088517967034275028064545393619471943508597642789736561111876518966375338087811587061841
 C_original = C_atlered / (2 ** 164)
 print(f"{C_original = }")
 ```
 Now with $C_{original}$ recovered, we can now start recovering the value of $m$ in bytes. In the challenge script, it is seen that:
-```python=
+```python
 e = 3
 p, q = getPrime(512), getPrime(512)
 N = p * q 
@@ -98,7 +98,7 @@ print(f"{flag = }")
 ```
 ### Solution
 Therefore, we end up with this python script as the solution:
-```python=
+```python
 from Crypto.Util.number import long_to_bytes
 
 C = 49352042282005059128581014505726171900605591297613623345867441621895112187636996726631442703018174634451487011943207283077132380966236199654225908444639768747819586037837300977718224328851698492514071424157020166404634418443047079321427635477610768472595631700807761956649004094995037741924081602353532946351
@@ -119,7 +119,7 @@ But when running this script, we actually get this output:
 What is happening?
 
 Apparently, python's floating point maths lose precision at such large numbers. In order to ensure precision, I had to convert everything to rust:
-```rust=
+```rust
 use num_bigint::BigUint;
 use num_traits::Pow;
 use std::str;
