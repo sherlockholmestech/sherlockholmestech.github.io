@@ -22,7 +22,7 @@ export const siteConfig: SiteConfig = {
 		credit: {
 			enable: true, // Display the credit text of the banner image
 			text: "Basic Apple Guy", // Credit text to be displayed
-			url: "https://basicappleguy.com/basicappleblog/skyline-ii", // (Optional) URL link to the original artwork or artist's page
+			url: "https://basicappleguy.com/haberdashery/macintoshwallpapers", // (Optional) URL link to the original artwork or artist's page
 		},
 	},
 	toc: {
