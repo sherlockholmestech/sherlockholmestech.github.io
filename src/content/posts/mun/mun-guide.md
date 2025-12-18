@@ -5,7 +5,7 @@ description: 'Adapted from the various training modules I have seen.'
 image: ''
 tags: ["Mun", "Guide"]
 category: 'MUN'
-draft: false 
+draft: true
 lang: ''
 ---
 # Research Methodology
