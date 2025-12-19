@@ -13,7 +13,7 @@ lang: ''
 
 _This challenge was solved in collaboration with abyts, where credit for this writeup also belongs to him._
 
-In this challenge, we are provided a disk image, alongside a memdump. The challenge mentions something about the computer being backdoored, so lets begin by looking for _wierd and suspicious_ files and binaries.
+In this challenge, we are provided a disk image, alongside a memdump. The challenge mentions something about the computer being backdoored, so lets begin by looking for _weird and suspicious_ files and binaries.
 
 ## The sane part
 
@@ -31,7 +31,7 @@ We also observe that there is a shell script that iterates over all the lyrics a
 
 Hmm, maybe the `cat` binary has something to do with this. Let us take a deeper look into what the `cat` binary actually entails.
 
-After extracting the `cat` binary from autopsy, we throw the binary into ghidra for further analysis. After some cursory glances, we come across this function whith this decompilation:
+After extracting the `cat` binary from autopsy, we throw the binary into ghidra for further analysis. After some cursory glances, we come across this function with this decompilation:
 
 ![ghidra interface](/images/ctf/blahaj_ghidra1.png)
 
@@ -119,15 +119,15 @@ From here, we can see that the process `mpd` is running with pid 764. Now, we ne
 
 ![term interface](/images/ctf/blahaj_term3.png)
 
-Now we know that the memory area 0x564f5bc47000 to 0x564f5bc4b000 is the rwx region where the shellcoce is inejcted to. Let us extract the memory regions of the `mpd` binary using `vol -f mem.dmp linux.elfs --pid 764 --dump`.
+Now we know that the memory area 0x564f5bc47000 to 0x564f5bc4b000 is the rwx region where the shellcode is injected to. Let us extract the memory regions of the `mpd` binary using `vol -f mem.dmp linux.elfs --pid 764 --dump`.
 
 ![term interface](/images/ctf/blahaj_term4.png)
 
-Note that only the first dump is of interest to us, as the other 329 dumps are just dumps of the libraries, of which are unrelated to the shellcode injection. Inspecting `pid.764.mpd.0x564f5bbe5000.dmp` in ghidra (yes ghidra because why not), we jump to offset 0x62000, which is the start of the rwx segment of the memory. Scrolling down, we notice a reference to the filename at 0x00163182, with some what seems to be giberrish asembly after forcing ghidra to disassemble this memory region (in a futile atttempt to locate the exact place where the ciphertext is by rev-ing the shellcode).
+Note that only the first dump is of interest to us, as the other 329 dumps are just dumps of the libraries, of which are unrelated to the shellcode injection. Inspecting `pid.764.mpd.0x564f5bbe5000.dmp` in ghidra (yes ghidra because why not), we jump to offset 0x62000, which is the start of the rwx segment of the memory. Scrolling down, we notice a reference to the filename at 0x00163182, with some what seems to be gibberish assembly after forcing ghidra to disassemble this memory region (in a futile attempt to locate the exact place where the ciphertext is by rev-ing the shellcode).
 
 ![ghidra interface](/images/ctf/blahaj_ghidra3.png)
 
-Using some inutition, the ciphertext cant be _that_ far off from the file name, can it? Upon further observation, we notice this segment:
+Using some intuition, the ciphertext cant be _that_ far off from the file name, can it? Upon further observation, we notice this segment:
 
 ![ghidra interface](/images/ctf/blahaj_ghidra4.png)
 
@@ -196,3 +196,5 @@ Running the script, we get:
 Unfortunately, our team was unable to solve this during the ctf (despite having 2 people spend almost 4 hours on this challenge). Nontheless, this challenge was a really fun one to upsolve, and if we had a proper forensics setup with volatility with symbols set up, this could have been much less time-consuming.
 
 # web - command runner
+
+In this challenge, we are provided a php website that apparently allows us to run commands.
