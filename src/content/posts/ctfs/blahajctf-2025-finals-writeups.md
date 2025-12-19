@@ -131,7 +131,7 @@ Using some intuition, the ciphertext cant be _that_ far off from the file name, 
 
 ![ghidra interface](/images/ctf/blahaj_ghidra4.png)
 
-`66 65 74 63 68 62 6f 6c 74 63 75 74 74 65 72 73`... Hmm... Sounds like "fetchboltcutters"! Could the ciphertext be located between the key and the filename? After all, it cant be assembly, since it is gibberish. Using Claude, we whip up a python script to decode the data between the key and filename:
+`66 65 74 63 68 62 6f 6c 74 63 75 74 74 65 72 73`... Hmm... Sounds like "fetchboltcutters"! Could the ciphertext be located between the key and the filename? After all, it cant be assembly, since it is gibberish. With the aid of Claude, we whip up a python script to decode the data between the key and filename:
 
 ```python
 RC4_KEY = b"fetchboltcutters"
