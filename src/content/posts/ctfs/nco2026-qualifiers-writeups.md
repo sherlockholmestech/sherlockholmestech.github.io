@@ -4,7 +4,7 @@ published: 2026-03-10
 description: 'Could have been better'
 image: ''
 tags: ["Ctf", "Pwn", "Forensics"]
-category: 'Ctf Writeups'
+category: 'CTF Writeups'
 draft: false 
 lang: ''
 ---
