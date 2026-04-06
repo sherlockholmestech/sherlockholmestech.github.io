@@ -15,7 +15,7 @@ On the 7th of March 2026, I participated in the qualifiers for Singapore's Natio
 
 # Pwn
 
-On hindsight, I massively threw this category and under-performed, clinching a grand total of *zero* points during the competition. On hindsight, I could have solved some of the challenges during the competition itself, and here are the challenges I upsolved soon after the competition.
+On hindsight, I massively threw this category and under-performed, clinching a grand total of *zero* points during the competition — some of which I could have solved during the competition itself. Here are the challenges I upsolved soon after.
 
 ## Pwn-Sum
 
@@ -126,7 +126,7 @@ if __name__ == "__main__":
 
 ```
 
-This should have been quite a simple solve, but i ran out of time due to being choked at pwn-flag-shop.
+This should have been quite a simple solve, but I ran out of time due to being choked at pwn-flag-shop.
 
 ## Pwn-Delta
 
@@ -278,11 +278,11 @@ int main() {
 
 ```
 
-We see the use of `malloc()` and `free()`, hence it immediately jumps as a heap challenge. `edit()` allows us to commit a use-after-free (UAF), so hence this is probably some heap bin metadata corruption challenge. We can use tcache poisoning in order to overwrite some function's address to pop a shell, however, since this challenge uses libc 2.35, we need to work around some safety mitigations.
+We see the use of `malloc()` and `free()`, hence it immediately jumps out as a heap challenge. `edit()` allows us to commit a use-after-free (UAF), hence this is probably some heap bin metadata corruption challenge. We can use tcache poisoning in order to overwrite some function's address to pop a shell, however, since this challenge uses libc 2.35, we need to work around some safety mitigations.
 
-We observe that the `edit()` function only allows us to touch the first 8 bytes of the tcache structure, hence we are unable to corrupt the bk (key) in order to commit a double free. That is ok though, we still can use `edit()` to incrementally increase/decrease the hex value in the first 8 bytes.
+We observe that the `edit()` function only allows us to touch the first 8 bytes of the tcache structure, hence we are unable to corrupt the bk (key) in order to commit a double free. That is ok though, we can still use `edit()` to incrementally increase/decrease the hex value in the first 8 bytes.
 
-Furthermore, in libc > 2.32, the `fd` of the tcache is mangled using `mangled_ptr = next_ptr ^ (this_ptr >> 12)`. This means that we have to leak what `(this_ptr >> 12)` could possibility be. This can be achieved by leaking the `fd` of the chunk at the end of the tcache bin, where `mangled_ptr = NULL ^ (this_ptr >> 12)`. Since it is xored by null, we can get `(this_ptr >> 12)`, and if we allocate chunks A and B such that head -> B -> A and A and B are close by on the same heap page, we can use the value of  `(this_ptr >> 12)` from A for B (as rightshift 12 discards the last 3 "nibbles" of the address) to find the address of A, and therefore, the address of B.
+Furthermore, in libc > 2.32, the `fd` of the tcache is mangled using `mangled_ptr = next_ptr ^ (this_ptr >> 12)`. This means that we have to leak what `(this_ptr >> 12)` could possibly be. This can be achieved by leaking the `fd` of the chunk at the end of the tcache bin, where `mangled_ptr = NULL ^ (this_ptr >> 12)`. Since it is xored by null, we can get `(this_ptr >> 12)`, and if we allocate chunks A and B such that head -> B -> A and A and B are close by on the same heap page, we can use the value of  `(this_ptr >> 12)` from A for B (as right-shifting by 12 discards the last 3 "nibbles" of the address) to find the address of A, and therefore, the address of B.
 
 In order to call system, we also need to leak the base of libc. This can be done via the unsorted bin, where the `fd` of the end of the unsorted bin points to `main_arena+96` in libc. By leaking the `fd`, we can calculate the base of libc.
 

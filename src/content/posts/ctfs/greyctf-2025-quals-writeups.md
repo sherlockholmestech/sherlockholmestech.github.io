@@ -10,7 +10,7 @@ lang: ''
 ---
 # Preamble
 
-GreyCTF 2025 was quite the eye-opener, as the first CTF that I have _properly_ particiapted in. Here are the writeups for the challs that I bothered to write for, do enjoy.
+GreyCTF 2025 was quite the eye-opener, as the first CTF that I have _properly_ participated in. Here are the writeups for the challs that I bothered to write up — do enjoy.
 
 # Writeups
 
@@ -57,7 +57,7 @@ print(f"{C = }")
 ```
 
 ### Thinking Process
-Absolutely hilarious (not) name aside, this challenge was one of the quickest to be solved in our team (other than Sanity Check, of course). A quick glance at the python code immediately jumped at me that this was some sort of easy crypto challenge.
+Absolutely hilarious (not) name aside, this challenge was one of the quickest to be solved in our team (other than Sanity Check, of course). A quick glance at the python code made it immediately clear that this was some sort of easy crypto challenge.
 
 ```python
 assert C < N 
@@ -73,7 +73,7 @@ while (C >= N):
 ```
 From these lines in the challenge script, we can see that $C$ is multiplied by $2^x$, where $x$ is the number of lines of "Tung!" printed, which from the output given is 164.  Also, before printing "Sahur!", we can see that the value of $C$ is subtracted by $N$.
 
-In order to recover the original value of $C$, I began by adding back the value of $N$, and dividng $C$ by $2^{164}$.
+In order to recover the original value of $C$, I began by adding back the value of $N$, and dividing $C$ by $2^{164}$.
 
 ```python
 C = 49352042282005059128581014505726171900605591297613623345867441621895112187636996726631442703018174634451487011943207283077132380966236199654225908444639768747819586037837300977718224328851698492514071424157020166404634418443047079321427635477610768472595631700807761956649004094995037741924081602353532946351
@@ -81,7 +81,7 @@ C_atlered = C + 1404354537303546457914113551946634761899255728226339693697891744
 C_original = C_atlered / (2 ** 164)
 print(f"{C_original = }")
 ```
-Now with $C_{original}$ recovered, we can now start recovering the value of $m$ in bytes. In the challenge script, it is seen that:
+With $C_{original}$ recovered, we can start recovering the value of $m$ in bytes. In the challenge script, it is seen that:
 ```python
 e = 3
 p, q = getPrime(512), getPrime(512)
@@ -171,7 +171,7 @@ Flag: `grey{tUn9_t00nG_t0ONg_x7_th3n_s4hUr}`
 ![image](https://i.imgur.com/J62xWwt.jpeg)
 
 ### Thinking Process
-After first seeing the image, my mind immediately thought that this photo was taken somewhere in rural Asia (I don't know why, it just seemed like so). Upon closer inspection, we can acually see a milestone along the side of the road:
+After first seeing the image, my mind immediately thought that this photo was taken somewhere in rural Asia (I don't know why, it just seemed like so). Upon closer inspection, we can actually see a milestone along the side of the road:
 
 ![bythebananatree copy](https://hackmd.io/_uploads/BJ3mY1cfgx.png)
 
@@ -197,7 +197,7 @@ It was incorrect?
 
 How could that be?
 
-Thinking that it could be a off-by-one error in my latitude and longitude positions, I tried multiple times altering the 3rd decimal place, but to no avail. This problem probably accounted for 50% of all my team's failed submissions.
+Thinking that it could be an off-by-one error in my latitude and longitude positions, I tried multiple times altering the 3rd decimal place, but to no avail. This problem probably accounted for 50% of all my team's failed submissions.
 
 Well, it turned out that some guy on Google maps had uploaded a wrong photo of the church. After searching for a while, I then came across the correct church:
 
@@ -232,7 +232,7 @@ Flag: `grey{N21-153_E105-274_nhathothanhlam}`
 
 ### Thinking Process
 
-The moment I saw the National Parks (NParks) sign in the corner, I immediately knew I had to solve this challenge, being a local Singapore resident.  If I could find the location of a church in the world, I could definitely find the location of a park in Singapore, right? At a glance, the place looked quite familiar to me, but afer a second of critical thinking I realised that all parks in Singapore pretty much looked the same, and I could not soley rely on contextual knowledge to solve this.
+The moment I saw the National Parks (NParks) sign in the corner, I immediately knew I had to solve this challenge, being a local Singapore resident.  If I could find the location of a church in the world, I could definitely find the location of a park in Singapore, right? At a glance, the place looked quite familiar to me, but after a second of critical thinking I realised that all parks in Singapore pretty much looked the same, and I could not solely rely on contextual knowledge to solve this.
 
 As any self-respecting osint solver would do, I plugged the image into Google Image Reverse Search to see if I could find any results. All I got were generic eBay metal signs up for sale.
 
@@ -240,15 +240,15 @@ With that out of the way, I then headed onto the NParks website to check the lis
 
 ![image](https://hackmd.io/_uploads/Sk-kgx9zxe.png)
 
-It would be rather *infeasable* for me to check all the parks on the NParks website. After using random sampling to check the signs of a few parks, I realised that doing this would lead me to nowhere. So I put this to rest for the night, planning to pick this up the next day.
+It would be rather *infeasible* for me to check all the parks on the NParks website. After using random sampling to check the signs of a few parks, I realised that doing this would lead me to nowhere. So I put this to rest for the night, planning to pick this up the next day.
 
-The next day, I awoken to a ping in my team chat, telling me to check the exif data of the image.
+The next day, I awoke to a ping in my team chat, telling me to check the exif data of the image.
 
 ![image](https://hackmd.io/_uploads/S1argl5Glg.png)
 
 Initially I had dismissed this clue as a dead end, having done a quick google search yielding no results.
 
-However his ping *inspired* me do more digging. Having partially done Red Flag Recon *(looking at you ducati777)*, and knowing how much the GreyCTF team loves Instagram, I decided that it wouldn't hurt to check Instagram for this username.
+However his ping *inspired* me to do more digging. Having partially done Red Flag Recon *(looking at you ducati777)*, and knowing how much the GreyCTF team loves Instagram, I decided that it wouldn't hurt to check Instagram for this username.
 
 And lo and behold, there was a public Instagram account under that name.
 
@@ -270,7 +270,7 @@ After taking a detour to doomscroll Instagram for a while, I viewed the stories 
 
 ![image](https://hackmd.io/_uploads/Byy2Me5zxl.png)
 
-Knowing a classmate who is into running and uses a Garmin watch, I hypothesised that he may be into running, and uses a smartwatch to track his runs. On instinct, I immediately checked Strava, a popular app to track runs, for his account.
+Knowing a classmate who is into running and uses a Garmin watch, I immediately checked Strava, a popular app to track runs, for his account.
 
 ![image](https://hackmd.io/_uploads/ByHB7l9zge.png)
 

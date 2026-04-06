@@ -11,9 +11,9 @@ lang: ''
 
 # forens - sleep-to-dream
 
-_This challenge was solved in collaboration with abyts, where credit for this writeup also belongs to him._
+_This challenge was solved in collaboration with abyts, who deserves equal credit for this writeup._
 
-In this challenge, we are provided a disk image, alongside a memdump. The challenge mentions something about the computer being backdoored, so lets begin by looking for _weird and suspicious_ files and binaries.
+In this challenge, we are provided a disk image, alongside a memdump. The challenge mentions something about the computer being backdoored, so let's begin by looking for _weird and suspicious_ files and binaries.
 
 ## The sane part
 
@@ -21,7 +21,7 @@ Putting the disk image into autopsy reveals that the user "fiona" has a few text
 
 ![autopsy interface](/images/ctf/blahaj_autopsy1.png)
 
-Suspiciously, the text fiile `4 - Criminal.txt` is empty. Maybe the backdoor did something to this file?
+Suspiciously, the text file `4 - Criminal.txt` is empty. Maybe the backdoor did something to this file?
 
 ![autopsy interface](/images/ctf/blahaj_autopsy2.png)
 
@@ -95,9 +95,9 @@ undefined8 initialize(char *param_1)
 }
 ```
 
-Looking through the decompiled C code, it appears that the `cat` binary is attempting to inject some sort of shellcode into the `mpd` binary. The backdoor checks if the file name is `4 - Criminal.txt`, and if such, copies some shellcode from DAT_00108a40 to local_6d8.
+Looking through the decompiled C code, it appears that the `cat` binary is attempting to inject some sort of shellcode into the `mpd` binary. The backdoor checks if the file name is `4 - Criminal.txt`, and if so, copies some shellcode from DAT_00108a40 to local_6d8.
 
-Skipping down to the data below the DAT_00108a40 section, it appears that the shell code is doing some sort of RC4 encryption is happening with the key "fetchboltcutters". Maybe the contents of `4 - Criminal.txt` was encrypted using RC4, and that the original contents contain the flag?
+Skipping down to the data below the DAT_00108a40 section, it appears that some sort of RC4 encryption is happening with the key "fetchboltcutters". Maybe the contents of `4 - Criminal.txt` was encrypted using RC4, and that the original contents contain the flag?
 
 ![ghidra interface](/images/ctf/blahaj_ghidra2.png)
 
@@ -115,7 +115,7 @@ After acquiring the correct volatility 3 symbols for this distribution and kerne
 
 ![term interface](/images/ctf/blahaj_term2.png)
 
-From here, we can see that the process `mpd` is running with pid 764. Now, we need to figure out which area in memory is the shellcode injected too. Because the shellcode injected must be executable, we are looking for an area in memory for this process with rwx permissions. We can do this using the command `vol -f mem.dmp linux.proc.Maps --pid 764 | grep "rwx"`.
+From here, we can see that the process `mpd` is running with pid 764. Now, we need to figure out which area in memory is the shellcode injected to. Because the shellcode injected must be executable, we are looking for an area in memory for this process with rwx permissions. We can do this using the command `vol -f mem.dmp linux.proc.Maps --pid 764 | grep "rwx"`.
 
 ![term interface](/images/ctf/blahaj_term3.png)
 
@@ -123,7 +123,7 @@ Now we know that the memory area 0x564f5bc47000 to 0x564f5bc4b000 is the rwx reg
 
 ![term interface](/images/ctf/blahaj_term4.png)
 
-Note that only the first dump is of interest to us, as the other 329 dumps are just dumps of the libraries, of which are unrelated to the shellcode injection. Inspecting `pid.764.mpd.0x564f5bbe5000.dmp` in ghidra (yes ghidra because why not), we jump to offset 0x62000, which is the start of the rwx segment of the memory. Scrolling down, we notice a reference to the filename at 0x00163182, with some what seems to be gibberish assembly after forcing ghidra to disassemble this memory region (in a futile attempt to locate the exact place where the ciphertext is by rev-ing the shellcode).
+Note that only the first dump is of interest to us, as the other 329 dumps are just dumps of the libraries, which are unrelated to the shellcode injection. Inspecting `pid.764.mpd.0x564f5bbe5000.dmp` in ghidra (yes ghidra because why not), we jump to offset 0x62000, which is the start of the rwx segment of the memory. Scrolling down, we notice a reference to the filename at 0x00163182, with somewhat gibberish assembly after forcing ghidra to disassemble this memory region (in a futile attempt to locate the exact place where the ciphertext is by rev-ing the shellcode).
 
 ![ghidra interface](/images/ctf/blahaj_ghidra3.png)
 
@@ -193,4 +193,4 @@ Running the script, we get:
 
 ![term interface](/images/ctf/blahaj_term5.png)
 
-Unfortunately, our team was unable to solve this during the ctf (despite having 2 people spend almost 4 hours on this challenge). Nontheless, this challenge was a really fun one to upsolve, and if we had a proper forensics setup with volatility with symbols set up, this could have been much less time-consuming.
+Unfortunately, our team was unable to solve this during the ctf (despite having 2 people spend almost 4 hours on this challenge). Nonetheless, this challenge was a really fun one to upsolve, and if we had a proper forensics setup with volatility with symbols set up, this could have been much less time-consuming.

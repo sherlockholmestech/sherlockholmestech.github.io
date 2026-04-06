@@ -12,7 +12,7 @@ lang: ''
 
 # Preamble (Rant about Infra)
 
-Coming into NCO Finals, I expected a generally smooth-running event. Maybe a few infrastructure overloads here and there, maybe a few challenges with hiccups, the usual CTF infra pain points. What I did not expect, however, was for the infrastructure and networking setup to be down for the large majority of the time of the CTF (to the extent that the organisers had to request us to use our mobile hotspots in order to maintain internet connectivity). The CTFd was unusable half the time, as it depended on the Google Fonts API, which was inaccessible due to the frankly horrid (and should i say rather peculiarly configured) networking setup during the competition. Nontheless, despite these technical difficulties, the actual challenges were rather interesting, and I would like to share some of my solutions for a few challenges that i found interesting. I am still in the process of upsolving some other challenges; these will be updated in this article once I get round to solving them.
+Coming into NCO Finals, I expected a generally smooth-running event. Maybe a few infrastructure overloads here and there, maybe a few challenges with hiccups, the usual CTF infra pain points. What I did not expect, however, was for the infrastructure and networking setup to be down for the large majority of the time of the CTF (to the extent that the organisers had to request us to use our mobile hotspots in order to maintain internet connectivity). The CTFd was unusable half the time, as it depended on the Google Fonts API, which was inaccessible due to the frankly horrid (and should I say rather peculiarly configured) networking setup during the competition. Nonetheless, despite these technical difficulties, the actual challenges were rather interesting, and I would like to share some of my solutions for a few challenges that I found interesting. I am still in the process of upsolving some other challenges; these will be updated in this article once I get round to solving them.
 
 Recommended listening: https://music.apple.com/sg/album/o-magnum-mysterium/487123957?i=487123980 (This rendition is really cool :D)
 
@@ -141,7 +141,7 @@ finish:
     ret
 ```
 
-What I **should** have noticed is that there is a `pop rax; syscall; ret` gadget which allows me to control `rax`, and thus trivially setup a Sigreturn frame on the stack to do SROP. However, my brain tunnel-visioned into thinking about how to gain control of `rdi`, `rsi` and `rdx` to `exeve("/bin/sh", 0, 0)`.
+What I **should** have noticed is that there is a `pop rax; syscall; ret` gadget which allows me to control `rax`, and thus trivially set up a Sigreturn frame on the stack to do SROP. However, my brain tunnel-visioned into thinking about how to gain control of `rdi`, `rsi` and `rdx` to `execve("/bin/sh", 0, 0)`.
 
 We also notice that name is stored in `.bss`, and since there is no PIE on this binary, we have a nice place to put `/bin/sh\x00`.
 
