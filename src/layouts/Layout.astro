@@ -3,7 +3,6 @@ import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
 
-import ConfigCarrier from "@components/ConfigCarrier.astro";
 import { profileConfig, siteConfig } from "@/config";
 import {
 	AUTO_MODE,
@@ -35,9 +34,6 @@ let { title, banner, description, lang, setOGTypeArticle } = Astro.props;
 // so use Swup hooks instead to change the height immediately when a link is clicked
 const isHomePage = pathsEqual(Astro.url.pathname, url("/"));
 
-// defines global css variables
-// why doing this in Layout instead of GlobalStyles: https://github.com/withastro/astro/issues/6728#issuecomment-1502203757
-const configHue = siteConfig.themeColor.hue;
 if (!banner || typeof banner !== "string" || banner.trim() === "") {
 	banner = siteConfig.banner.src;
 }
@@ -110,7 +106,7 @@ const bannerOffset =
 		))}
 
 		<!-- Set the theme before the page is rendered to avoid a flash -->
-		<script is:inline define:vars={{DEFAULT_THEME, LIGHT_MODE, DARK_MODE, AUTO_MODE, BANNER_HEIGHT_EXTEND, PAGE_WIDTH, configHue}}>
+		<script is:inline define:vars={{DEFAULT_THEME, LIGHT_MODE, DARK_MODE, AUTO_MODE, BANNER_HEIGHT_EXTEND, PAGE_WIDTH}}>
 			// Load the theme from local storage
 			const theme = localStorage.getItem('theme') || DEFAULT_THEME;
 			switch (theme) {
@@ -128,17 +124,12 @@ const bannerOffset =
 					}
 			}
 
-			// Load the hue from local storage
-			const hue = localStorage.getItem('hue') || configHue;
-			document.documentElement.style.setProperty('--hue', hue);
-
 			// calculate the --banner-height-extend, which needs to be a multiple of 4 to avoid blurry text
 			let offset = Math.floor(window.innerHeight * (BANNER_HEIGHT_EXTEND / 100));
 			offset = offset - offset % 4;
 			document.documentElement.style.setProperty('--banner-height-extend', `${offset}px`);
 		</script>
 		<style define:vars={{
-			configHue,
 			'page-width': `${PAGE_WIDTH}rem`,
 		}}></style>  <!-- defines global css variables. This will be applied to <html> <body> and some other elements idk why -->
 
@@ -151,7 +142,6 @@ const bannerOffset =
 	<body class=" min-h-screen transition " class:list={[{"lg:is-home": isHomePage, "enable-banner": enableBanner}]}
 		  data-overlayscrollbars-initialize
 	>
-		<ConfigCarrier></ConfigCarrier>
 		<slot />
 
 		<!-- increase the page height during page transition to prevent the scrolling animation from jumping -->
@@ -202,7 +192,7 @@ import {
 	// SizeObserverPlugin,
 	// ClickScrollPlugin
 } from 'overlayscrollbars';
-import {getHue, getStoredTheme, setHue, setTheme} from "../utils/setting-utils";
+import {getStoredTheme, setTheme} from "../utils/setting-utils";
 import {pathsEqual, url} from "../utils/url-utils";
 import {
 	BANNER_HEIGHT,
@@ -272,18 +262,12 @@ function setClickOutsideToClose(panel: string, ignores: string[]) {
 		panelDom!.classList.add("float-panel-closed");
 	});
 }
-setClickOutsideToClose("display-setting", ["display-setting", "display-settings-switch"])
 setClickOutsideToClose("nav-menu-panel", ["nav-menu-panel", "nav-menu-switch"])
-setClickOutsideToClose("search-panel", ["search-panel", "search-bar", "search-switch"])
 
 
 function loadTheme() {
 	const theme = getStoredTheme()
 	setTheme(theme)
-}
-
-function loadHue() {
-	setHue(getHue())
 }
 
 function initCustomScrollbar() {
@@ -366,7 +350,6 @@ function showBanner() {
 function init() {
 	// disableAnimation()()		// TODO
 	loadTheme();
-	loadHue();
 	initCustomScrollbar();
 	showBanner();
 }

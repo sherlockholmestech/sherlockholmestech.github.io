@@ -3,15 +3,26 @@ import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import Icon from "@iconify/svelte";
 import { url } from "@utils/url-utils.ts";
-import { onMount } from "svelte";
+import { onMount, tick } from "svelte";
 import type { SearchResult } from "@/global";
 
-let keywordDesktop = "";
-let keywordMobile = "";
+let keyword = "";
 let result: SearchResult[] = [];
 let isSearching = false;
 let pagefindLoaded = false;
 let initialized = false;
+let loadFailed = false;
+let open = false;
+let selectedIndex = 0;
+let inputElement: HTMLInputElement;
+let dialogElement: HTMLDialogElement;
+let searchTimeout: ReturnType<typeof setTimeout> | undefined;
+let searchToken = 0;
+
+const resultLimit = 8;
+const pagefindScriptUrl = url("/pagefind/pagefind.js");
+const pagefindBasePath = url("/pagefind/");
+const pagefindBaseUrl = url("/");
 
 const fakeResult: SearchResult[] = [
 	{
@@ -27,34 +38,44 @@ const fakeResult: SearchResult[] = [
 		meta: {
 			title: "If You Want to Test the Search",
 		},
-		excerpt: "Try running <mark>npm build && npm preview</mark> instead.",
+		excerpt: "Try running <mark>pnpm build && pnpm preview</mark> instead.",
 	},
 ];
 
-const togglePanel = () => {
-	const panel = document.getElementById("search-panel");
-	panel?.classList.toggle("float-panel-closed");
+const openPalette = async (): Promise<void> => {
+	open = true;
+	await tick();
+	if (!dialogElement.open) {
+		dialogElement.showModal();
+	}
+	inputElement?.focus();
+	void ensurePagefind();
 };
 
-const setPanelVisibility = (show: boolean, isDesktop: boolean): void => {
-	const panel = document.getElementById("search-panel");
-	if (!panel || !isDesktop) return;
-
-	if (show) {
-		panel.classList.remove("float-panel-closed");
-	} else {
-		panel.classList.add("float-panel-closed");
+const closePalette = (): void => {
+	open = false;
+	selectedIndex = 0;
+	if (dialogElement?.open) {
+		dialogElement.close();
 	}
 };
 
-const search = async (keyword: string, isDesktop: boolean): Promise<void> => {
-	if (!keyword) {
-		setPanelVisibility(false, isDesktop);
+const runSearch = async (query: string): Promise<void> => {
+	const trimmedQuery = query.trim();
+	const currentToken = ++searchToken;
+
+	if (!trimmedQuery) {
 		result = [];
+		selectedIndex = 0;
+		isSearching = false;
 		return;
 	}
 
 	if (!initialized) {
+		await ensurePagefind();
+	}
+
+	if (!initialized || loadFailed) {
 		return;
 	}
 
@@ -64,25 +85,114 @@ const search = async (keyword: string, isDesktop: boolean): Promise<void> => {
 		let searchResults: SearchResult[] = [];
 
 		if (import.meta.env.PROD && pagefindLoaded && window.pagefind) {
-			const response = await window.pagefind.search(keyword);
+			const response = await window.pagefind.search(trimmedQuery);
 			searchResults = await Promise.all(
-				response.results.map((item) => item.data()),
+				response.results.slice(0, resultLimit).map((item) => item.data()),
 			);
 		} else if (import.meta.env.DEV) {
 			searchResults = fakeResult;
 		} else {
-			searchResults = [];
 			console.error("Pagefind is not available in production environment.");
+			return;
+		}
+
+		if (currentToken !== searchToken) {
+			return;
 		}
 
 		result = searchResults;
-		setPanelVisibility(result.length > 0, isDesktop);
+		selectedIndex = 0;
 	} catch (error) {
-		console.error("Search error:", error);
-		result = [];
-		setPanelVisibility(false, isDesktop);
+		if (currentToken === searchToken) {
+			console.error("Search error:", error);
+			result = [];
+			selectedIndex = 0;
+		}
 	} finally {
-		isSearching = false;
+		if (currentToken === searchToken) {
+			isSearching = false;
+		}
+	}
+};
+
+const ensurePagefind = async (): Promise<void> => {
+	if (initialized || import.meta.env.DEV) {
+		return;
+	}
+
+	try {
+		const pagefind = await import(/* @vite-ignore */ pagefindScriptUrl);
+		await pagefind.options?.({
+			basePath: pagefindBasePath,
+			baseUrl: pagefindBaseUrl,
+			excerptLength: 30,
+		});
+		await pagefind.init?.();
+
+		window.pagefind = pagefind;
+		pagefindLoaded = typeof pagefind.search === "function";
+		initialized = true;
+		loadFailed = !pagefindLoaded;
+
+		if (keyword) {
+			void runSearch(keyword);
+		}
+	} catch (error) {
+		console.error("Failed to load Pagefind:", error);
+		initialized = true;
+		pagefindLoaded = false;
+		loadFailed = true;
+	}
+};
+
+const scheduleSearch = (): void => {
+	if (searchTimeout) {
+		clearTimeout(searchTimeout);
+	}
+
+	searchTimeout = setTimeout(() => {
+		void runSearch(keyword);
+	}, 120);
+};
+
+const openSelectedResult = (): void => {
+	const selectedResult = result[selectedIndex];
+	if (!selectedResult) {
+		return;
+	}
+
+	window.location.href = selectedResult.url;
+	closePalette();
+};
+
+const handlePaletteKeydown = (event: KeyboardEvent): void => {
+	if (event.key === "Escape") {
+		event.preventDefault();
+		closePalette();
+		return;
+	}
+
+	if (event.key === "ArrowDown") {
+		event.preventDefault();
+		selectedIndex = Math.min(selectedIndex + 1, result.length - 1);
+		return;
+	}
+
+	if (event.key === "ArrowUp") {
+		event.preventDefault();
+		selectedIndex = Math.max(selectedIndex - 1, 0);
+		return;
+	}
+
+	if (event.key === "Enter") {
+		event.preventDefault();
+		openSelectedResult();
+	}
+};
+
+const handleDialogClick = (event: MouseEvent): void => {
+	if (event.target === dialogElement) {
+		closePalette();
 	}
 };
 
@@ -93,106 +203,136 @@ onMount(() => {
 			typeof window !== "undefined" &&
 			!!window.pagefind &&
 			typeof window.pagefind.search === "function";
-		console.log("Pagefind status on init:", pagefindLoaded);
-		if (keywordDesktop) search(keywordDesktop, true);
-		if (keywordMobile) search(keywordMobile, false);
+
+		if (keyword) {
+			void runSearch(keyword);
+		}
 	};
 
+	const handleDocumentKeydown = (event: KeyboardEvent): void => {
+		if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+			event.preventDefault();
+			void openPalette();
+		}
+	};
+
+	document.addEventListener("keydown", handleDocumentKeydown);
+
 	if (import.meta.env.DEV) {
-		console.log(
-			"Pagefind is not available in development mode. Using mock data.",
-		);
 		initializeSearch();
 	} else {
-		document.addEventListener("pagefindready", () => {
-			console.log("Pagefind ready event received.");
-			initializeSearch();
-		});
-		document.addEventListener("pagefindloaderror", () => {
-			console.warn(
-				"Pagefind load error event received. Search functionality will be limited.",
-			);
-			initializeSearch(); // Initialize with pagefindLoaded as false
-		});
-
-		// Fallback in case events are not caught or pagefind is already loaded by the time this script runs
-		setTimeout(() => {
-			if (!initialized) {
-				console.log("Fallback: Initializing search after timeout.");
-				initializeSearch();
-			}
-		}, 2000); // Adjust timeout as needed
+		void ensurePagefind();
 	}
+
+	return () => {
+		document.removeEventListener("keydown", handleDocumentKeydown);
+		if (searchTimeout) {
+			clearTimeout(searchTimeout);
+		}
+	};
 });
 
-$: if (initialized && keywordDesktop) {
-	(async () => {
-		await search(keywordDesktop, true);
-	})();
-}
-
-$: if (initialized && keywordMobile) {
-	(async () => {
-		await search(keywordMobile, false);
-	})();
+$: if (initialized) {
+	scheduleSearch();
 }
 </script>
 
-<!-- search bar for desktop view -->
-<div id="search-bar" class="hidden lg:flex transition-all items-center h-11 mr-2 rounded-lg
-      bg-black/[0.04] hover:bg-black/[0.06] focus-within:bg-black/[0.06]
-      dark:bg-white/5 dark:hover:bg-white/10 dark:focus-within:bg-white/10
-">
-    <Icon icon="material-symbols:search" class="absolute text-[1.25rem] pointer-events-none ml-3 transition my-auto text-black/30 dark:text-white/30"></Icon>
-    <input placeholder="{i18n(I18nKey.search)}" bind:value={keywordDesktop} on:focus={() => search(keywordDesktop, true)}
-           class="transition-all pl-10 text-sm bg-transparent outline-0
-         h-full w-40 active:w-60 focus:w-60 text-black/50 dark:text-white/50"
-    >
-</div>
-
-<!-- toggle btn for phone/tablet view -->
-<button on:click={togglePanel} aria-label="Search Panel" id="search-switch"
-        class="btn-plain scale-animation lg:!hidden rounded-lg w-11 h-11 active:scale-90">
-    <Icon icon="material-symbols:search" class="text-[1.25rem]"></Icon>
+<button
+	on:click={openPalette}
+	aria-label={i18n(I18nKey.search)}
+	id="search-switch"
+	class="btn-plain scale-animation rounded-lg h-11 w-11 lg:w-auto lg:px-4 active:scale-90"
+>
+	<Icon icon="material-symbols:search" class="text-[1.25rem] lg:mr-2"></Icon>
+	<span class="hidden lg:inline text-sm font-medium">{i18n(I18nKey.search)}</span>
 </button>
 
-<!-- search panel -->
-<div id="search-panel" class="float-panel float-panel-closed search-panel absolute md:w-[30rem]
-top-20 left-4 md:left-[unset] right-4 shadow-2xl rounded-2xl p-2">
+<dialog
+	bind:this={dialogElement}
+	id="search-panel"
+	class="search-panel w-[calc(100vw-2rem)] max-w-2xl overflow-hidden rounded-2xl bg-[var(--float-panel-bg)] p-0 text-left text-inherit shadow-2xl transition backdrop:bg-black/40 dark:backdrop:bg-black/60"
+	aria-label={i18n(I18nKey.search)}
+	on:click={handleDialogClick}
+	on:cancel={(event) => {
+		event.preventDefault();
+		closePalette();
+	}}
+	on:keydown={handlePaletteKeydown}
+>
+	<div
+		class="overflow-hidden rounded-2xl bg-[var(--float-panel-bg)]"
+		role="document"
+	>
+		<div class="flex h-14 items-center border-b border-[var(--line-divider)] px-4">
+			<Icon icon="material-symbols:search" class="mr-3 text-[1.35rem] text-30"></Icon>
+			<input
+				bind:this={inputElement}
+				bind:value={keyword}
+				placeholder={i18n(I18nKey.search)}
+				class="h-full min-w-0 flex-1 bg-transparent text-base text-90 outline-0 placeholder:text-black/30 dark:placeholder:text-white/30"
+			/>
+			<button
+				type="button"
+				aria-label="Close"
+				class="btn-plain ml-3 h-9 w-9 rounded-lg active:scale-90"
+				on:click={closePalette}
+			>
+				<Icon icon="material-symbols:close-rounded" class="text-[1.2rem]"></Icon>
+			</button>
+		</div>
 
-    <!-- search bar inside panel for phone/tablet -->
-    <div id="search-bar-inside" class="flex relative lg:hidden transition-all items-center h-11 rounded-xl
-      bg-black/[0.04] hover:bg-black/[0.06] focus-within:bg-black/[0.06]
-      dark:bg-white/5 dark:hover:bg-white/10 dark:focus-within:bg-white/10
-  ">
-        <Icon icon="material-symbols:search" class="absolute text-[1.25rem] pointer-events-none ml-3 transition my-auto text-black/30 dark:text-white/30"></Icon>
-        <input placeholder="Search" bind:value={keywordMobile}
-               class="pl-10 absolute inset-0 text-sm bg-transparent outline-0
-               focus:w-60 text-black/50 dark:text-white/50"
-        >
-    </div>
-
-    <!-- search results -->
-    {#each result as item}
-        <a href={item.url}
-           class="transition first-of-type:mt-2 lg:first-of-type:mt-0 group block
-       rounded-xl text-lg px-3 py-2 hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)]">
-            <div class="transition text-90 inline-flex font-bold group-hover:text-[var(--primary)]">
-                {item.meta.title}<Icon icon="fa6-solid:chevron-right" class="transition text-[0.75rem] translate-x-1 my-auto text-[var(--primary)]"></Icon>
-            </div>
-            <div class="transition text-sm text-50">
-                {@html item.excerpt}
-            </div>
-        </a>
-    {/each}
-</div>
+		<div class="max-h-[min(30rem,calc(76vh-3.5rem))] overflow-y-auto p-2">
+			{#if keyword.trim() && loadFailed}
+				<div class="px-3 py-8 text-center text-sm text-50">Search failed to load</div>
+			{:else if keyword.trim() && (!initialized || isSearching)}
+				<div class="px-3 py-8 text-center text-sm text-50">Searching...</div>
+			{:else if keyword.trim() && result.length === 0}
+				<div class="px-3 py-8 text-center text-sm text-50">No results</div>
+			{:else if !keyword.trim()}
+				<div class="px-3 py-8 text-center text-sm text-50">Start typing to search posts</div>
+			{:else}
+				{#each result as item, index}
+					<a
+						href={item.url}
+						class={`group block rounded-xl px-4 py-3 transition hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] ${
+							index === selectedIndex ? "bg-[var(--btn-plain-bg-hover)]" : ""
+						}`}
+						on:mouseenter={() => (selectedIndex = index)}
+						on:click={closePalette}
+					>
+						<div class="flex items-center justify-between gap-3">
+							<div class="min-w-0 truncate font-bold text-90 transition group-hover:text-[var(--primary)]">
+								{item.meta.title}
+							</div>
+							<Icon icon="fa6-solid:chevron-right" class="shrink-0 text-[0.75rem] text-[var(--primary)]"></Icon>
+						</div>
+						<div class="mt-1 line-clamp-2 text-sm text-50">
+							{@html item.excerpt}
+						</div>
+					</a>
+				{/each}
+			{/if}
+		</div>
+	</div>
+</dialog>
 
 <style>
-  input:focus {
-    outline: 0;
-  }
-  .search-panel {
-    max-height: calc(100vh - 100px);
-    overflow-y: auto;
-  }
+	input:focus {
+		outline: 0;
+	}
+
+	.search-panel {
+		border: 0;
+		margin-top: 12vh;
+	}
+
+	.search-panel::backdrop {
+		backdrop-filter: blur(8px);
+	}
+
+	.search-panel mark {
+		background: transparent;
+		color: var(--primary);
+		font-weight: 700;
+	}
 </style>
