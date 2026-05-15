@@ -145,13 +145,13 @@ const ensurePagefind = async (): Promise<void> => {
 	}
 };
 
-const scheduleSearch = (): void => {
+const scheduleSearch = (query: string): void => {
 	if (searchTimeout) {
 		clearTimeout(searchTimeout);
 	}
 
 	searchTimeout = setTimeout(() => {
-		void runSearch(keyword);
+		void runSearch(query);
 	}, 120);
 };
 
@@ -232,8 +232,8 @@ onMount(() => {
 	};
 });
 
-$: if (initialized) {
-	scheduleSearch();
+$: if (initialized && !loadFailed) {
+	scheduleSearch(keyword);
 }
 </script>
 
